@@ -56,20 +56,34 @@ export default function Canvas(props) {
                 this.position = position
                 this.velocity = velocity
                 this.radius = 15
+                this.radians = 0.75
+                this.openRate = 0.05
+                this.rotation = 0
             }
 
             draw() {
+                context.save()
+                context.translate(this.position.x, this.position.y)
+                context.rotate(this.rotation)
+                context.translate(-this.position.x, -this.position.y)
                 context.beginPath()
-                context.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
+                context.arc(this.position.x, this.position.y, this.radius, this.radians, Math.PI * 2 - this.radians)
+                context.lineTo(this.position.x, this.position.y )
                 context.fillStyle = 'yellow'
                 context.fill()
                 context.closePath()
+                context.restore()
             }
 
             update() {
                 this.draw()
                 this.position.x += this.velocity.x
                 this.position.y += this.velocity.y
+
+                
+                if (this.radians < 0 || this.radians > .75) this.openRate = -this.openRate
+
+                this.radians += this.openRate
             }
         }
 
@@ -82,12 +96,13 @@ export default function Canvas(props) {
                 this.color = color
                 this.prevCollisions = []
                 this.speed = 2
+                this.scared = false
             }
 
             draw() {
                 context.beginPath()
                 context.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
-                context.fillStyle = this.color
+                context.fillStyle = this.scared ? 'blue' : this.color
                 context.fill()
                 context.closePath()
             }
@@ -103,6 +118,21 @@ export default function Canvas(props) {
             constructor({ position }) {
                 this.position = position
                 this.radius = 3
+            }
+
+            draw() {
+                context.beginPath()
+                context.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2)
+                context.fillStyle = 'white'
+                context.fill()
+                context.closePath()
+            }
+        }
+
+        class PowerUp {
+            constructor({ position }) {
+                this.position = position
+                this.radius = 6
             }
 
             draw() {
@@ -145,16 +175,29 @@ export default function Canvas(props) {
         let scorePoints = 0
         const boundaries = []
         const pellets = []
+        const powerUps = []
         const ghosts = [
             new Ghost({
                 position: {
-                    x: 6 * Boundary.width + Boundary.width / 2,
+                    x: Boundary.width * 6 + Boundary.width / 2,
                     y: Boundary.height + Boundary.height / 2
                 },
                 velocity: {
                     x: Ghost.speed,
                     y: 0
                 }
+            }),
+
+            new Ghost({
+                position: {
+                    x: Boundary.width * 6 + Boundary.width / 2,
+                    y: Boundary.height * 3 + Boundary.height / 2
+                },
+                velocity: {
+                    x: Ghost.speed,
+                    y: 0
+                },
+                color: 'pink'
             })
         ]
 
@@ -184,7 +227,7 @@ export default function Canvas(props) {
 
         map.forEach((row, i) => {
             row.forEach((symbol, j) => {
-                console.log(symbol)
+                // console.log(symbol)
                 switch (symbol) {
                     case '-':
                         boundaries.push(
@@ -193,6 +236,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeHorizontal)
                             })
                         )
@@ -204,6 +248,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeVertical)
                             })
                         )
@@ -216,6 +261,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeConer1)
                             })
                         )
@@ -228,6 +274,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeConer2)
                             })
                         )
@@ -240,6 +287,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeConer3)
                             })
                         )
@@ -252,6 +300,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeConer4)
                             })
                         )
@@ -264,6 +313,7 @@ export default function Canvas(props) {
                                     x: Boundary.width * j,
                                     y: Boundary.height * i
                                 },
+                                color: 'blue',
                                 image: createImage(pipeBlock)
                             })
                         )
@@ -276,6 +326,7 @@ export default function Canvas(props) {
                                     x: j * Boundary.width,
                                     y: i * Boundary.height
                                 },
+                                color: 'blue',
                                 image: createImage(capLeft)
                             })
                         )
@@ -287,6 +338,7 @@ export default function Canvas(props) {
                                     x: j * Boundary.width,
                                     y: i * Boundary.height
                                 },
+                                color: 'blue',
                                 image: createImage(capRight)
                             })
                         )
@@ -298,6 +350,7 @@ export default function Canvas(props) {
                                     x: j * Boundary.width,
                                     y: i * Boundary.height
                                 },
+                                color: 'blue',
                                 image: createImage(capBottom)
                             })
                         )
@@ -320,6 +373,7 @@ export default function Canvas(props) {
                                     x: j * Boundary.width,
                                     y: i * Boundary.height
                                 },
+                                color: 'blue',
                                 image: createImage(pipeCross)
                             })
                         )
@@ -367,6 +421,7 @@ export default function Canvas(props) {
                                     x: j * Boundary.width,
                                     y: i * Boundary.height
                                 },
+                                color: 'blue',
                                 image: createImage(pipeConnectorLeft)
                             })
                         )
@@ -382,6 +437,16 @@ export default function Canvas(props) {
                             })
                         )
                         break
+
+                    case 'p':
+                        powerUps.push(
+                            new PowerUp({
+                                position: {
+                                    x: j * Boundary.width + Boundary.width / 2,
+                                    y: i * Boundary.height + Boundary.height / 2
+                                }
+                            })
+                        )
                 }
             })
         })
@@ -392,16 +457,21 @@ export default function Canvas(props) {
         }) {
             const padding = Boundary.width/2 - circle.radius - 1
             return (
-                circle.position.y - circle.radius + circle.velocity.y + padding<= rectangle.position.y + rectangle.height &&
-                circle.position.x + circle.radius + circle.velocity.x - padding>= rectangle.position.x &&
-                circle.position.y + circle.radius + circle.velocity.y -padding>= rectangle.position.y &&
-                circle.position.x - circle.radius + circle.velocity.x + padding<= rectangle.position.x + rectangle.width
+                circle.position.y - circle.radius + circle.velocity.y - padding<= rectangle.position.y + rectangle.height &&
+                circle.position.x + circle.radius + circle.velocity.x + padding>= rectangle.position.x  &&
+                circle.position.y + circle.radius + circle.velocity.y + padding>= rectangle.position.y &&
+                circle.position.x - circle.radius + circle.velocity.x - padding<= rectangle.position.x + rectangle.width
             )
         }
 
+        let animationId
+
         function animate() {
-            requestAnimationFrame(animate)
+            animationId = requestAnimationFrame(animate)
+            console.log(animationId)
             context.clearRect(0, 0, canvas.width, canvas.height)
+
+            // boundaries.forEach(boundary =>{})
 
             if (keys.w.pressed && lastkey === 'w') {
 
@@ -492,13 +562,67 @@ export default function Canvas(props) {
                 }
             }
 
+            // ghost collision with player
 
-            for (let i = pellets.length - 1; 0 < i; i--) {
+            for (let i = ghosts.length - 1; 0 <= i; i--) {
+                const ghost = ghosts[i]
+                ghost.draw()
+
+                // player collides with ghost
+                if (Math.hypot(ghost.position.x - player.position.x, ghost.position.y - player.position.y) < ghost.radius + player.radius) {
+                    // console.log('touching')
+
+                    if (ghost.scared) {
+                        ghosts.splice(i, 1)
+                    }
+
+                    else {
+                        cancelAnimationFrame(animationId)
+                    }
+                    // alternate power up
+                    // if (ghost.scared == false) {
+                    //     cancelAnimationFrame(animationId)
+                    // }
+
+                }
+            }
+
+            // win condition
+            if (pellets.length === 0) {
+                console.log('you win')
+                cancelAnimationFrame(animationId)
+            }
+
+            //this is for powerups
+            for (let i = powerUps.length - 1; 0 <= i; i--) {
+                const powerup = powerUps[i]
+                powerup.draw()
+
+                // player collides with player, hence ghost scared
+                if (Math.hypot(powerup.position.x - player.position.x, powerup.position.y - player.position.y) < powerup.radius + player.radius) {
+                    // console.log('touching')
+                    powerUps.splice(i, 1)
+
+                    ghosts.forEach(ghost => {
+                        ghost.scared =true
+
+                        setTimeout(() => {
+                            ghost.scared = false
+                        }, 5000)
+                    })
+                    // scorePoints += 10
+                    // score.innerHTML = scorePoints
+
+                }
+            }
+
+            // touching with pellets
+            for (let i = pellets.length - 1; 0 <= i; i--) {
                 const pellet = pellets[i]
                 pellet.draw()
 
                 if (Math.hypot(pellet.position.x - player.position.x, pellet.position.y - player.position.y) < pellet.radius + player.radius) {
-                    console.log('touching')
+                    // console.log('touching')
                     pellets.splice(i, 1)
                     scorePoints += 10
                     score.innerHTML = scorePoints
@@ -524,7 +648,9 @@ export default function Canvas(props) {
                 ghost.update()
 
                 const collisions = []
+
                 boundaries.forEach((boundary) => {
+                    
                     if (
                         !collisions.includes('right') &&
                         circleCollidesWithRect({
@@ -584,15 +710,18 @@ export default function Canvas(props) {
                         })) {
                         // player.velocity.x = 0
                         collisions.push('bottom')
-
+                    
                     }
                 })
-                if (collisions.length > ghost.prevCollisions.length) {
+                if (collisions.length > ghost.prevCollisions.length)
                     ghost.prevCollisions = collisions
-                }
+                    // console.log(collisions)
+                
+                // console.log(ghost.prevCollisions)
+                // //JSON.stringify(collisions) !== JSON.stringify(ghost.prevCollisions)
 
                 if (JSON.stringify(collisions) !== JSON.stringify(ghost.prevCollisions)) {
-                    console.log('go')
+                    // console.log('go')
                     if (ghost.velocity.x > 0) ghost.prevCollisions.push('right')
                     
                     else if (ghost.velocity.x < 0) ghost.prevCollisions.push('left')
@@ -600,14 +729,19 @@ export default function Canvas(props) {
                     else if (ghost.velocity.y > 0) ghost.prevCollisions.push('bottom')
     
                     else if (ghost.velocity.y < 0) ghost.prevCollisions.push('top')
-    
+                    // console.log(collisions)
+                    // console.log(ghost.prevCollisions)
+
                     const pathways = ghost.prevCollisions.filter((collision) => {
                         return !collisions.includes(collision)
-                    })
-                    console.log({pathways})
+                    })  
+
+                    // console.log({pathways})
+                    
     
                     const direction = pathways[Math.floor(Math.random() * pathways.length)]
     
+                    // console.log({direction})
                     switch (direction) {
                         case 'bottom':
                             ghost.velocity.y = Ghost.speed
@@ -621,32 +755,32 @@ export default function Canvas(props) {
     
                         case 'left':
                             ghost.velocity.y = 0
-                            ghost.velocity.x = Ghost.speed
+                            ghost.velocity.x = -Ghost.speed
                             break
     
                         case 'right':
                             ghost.velocity.y = 0
-                            ghost.velocity.x = -Ghost.speed
+                            ghost.velocity.x = Ghost.speed
                             break
                     }
+                //     // collisions = []
                     ghost.prevCollisions = []
                 }
-
-                
-
             })
-        }
+
+            if (player.velocity.x > 0) player.rotation = 0
+            else if (player.velocity.x < 0) player.rotation = Math.PI
+            else if (player.velocity.y > 0) player.rotation = Math.PI * 0.5
+            else if (player.velocity.y < 0) player.rotation = Math.PI * 1.5
+
+
+        } // end of animation loop
+
+
 
         animate()
 
 
-        // boundaries.forEach((boundary) => {
-        //     boundary.draw()
-
-
-        // })
-
-        // player.update()
 
         window.addEventListener('keydown', ({ key }) => {
             switch (key) {
